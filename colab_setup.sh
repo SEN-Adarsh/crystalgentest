@@ -1,17 +1,25 @@
 #!/usr/bin/env bash
-# Colab setup. Run once per session:  !bash colab_setup.sh
+# Colab setup. Run this INSTEAD of `pip install -e .`:  !bash colab_setup.sh
 #
-# Installs against the torch Colab already ships, on Colab's own Python. The
-# only thing pip cannot work out by itself is torch_scatter / torch_sparse /
-# torch_cluster: PyPI carries source-only, so pip would compile them for ~20
-# minutes. data.pyg.org has prebuilt wheels, but they are keyed to one exact
-# torch version, so the find-links URL has to be derived at runtime.
+# The one thing pip cannot work out alone is torch_scatter / torch_sparse /
+# torch_cluster: PyPI carries source only, so pip compiles each for 15-20
+# minutes. data.pyg.org ships them prebuilt, but keyed to one exact torch build,
+# so the find-links URL has to be derived at runtime.
 set -euo pipefail
 
 TORCH=$(python -c "import torch; print(torch.__version__)")
+WHEELS="https://data.pyg.org/whl/torch-${TORCH}.html"
 echo "building against torch $TORCH"
 
-pip install -q -e . -f "https://data.pyg.org/whl/torch-${TORCH}.html"
+# Fail loudly rather than let pip fall through to a source build.
+if ! curl -sfI "$WHEELS" > /dev/null; then
+  echo "no prebuilt PyG extensions for torch $TORCH at $WHEELS" >&2
+  echo "pick a torch that data.pyg.org publishes for, e.g." >&2
+  echo "  pip install 'torch==2.11.0' --index-url https://download.pytorch.org/whl/cu128" >&2
+  exit 1
+fi
+
+pip install -q -e . -f "$WHEELS"
 
 # CHGNet drives the cycling screen and is not a project dependency. --no-deps
 # keeps it from pulling a different torch in and breaking the CUDA build.

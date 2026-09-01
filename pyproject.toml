@@ -54,12 +54,12 @@ dependencies = [
 "jupyterlab>=4.2.5",
 "lmdb",
 "matplotlib>=3.8",  # 3.8.4 exactly has no wheel for python 3.13
-"matscipy>=0.7.0",
+"matscipy>=1.2.0",  # 1.1.1 caps numpy below 2 and is source-only, see numpy below
 "mattersim>=1.1",
 "monty>=2024.7.30",  # keep up-to-date together with pymatgen, atomate2
 "notebook>=7.2.2",
-"numpy>=1.26",  # 1.26.4 was the last release before the 2.0 breaks and has no
-                # python 3.13 wheel; recent pymatgen requires numpy 2 anyway
+"numpy>=2",  # >=1.26 is not enough: pip will happily pick 1.26.4, which is
+             # source-only on python 3.13, to satisfy an older matscipy
 "omegaconf==2.3.0",
 "pymatgen>=2024.6.4",
 "pylint",
@@ -71,18 +71,22 @@ dependencies = [
 "sympy>=1.11.1",
 # Unpinned on linux so pip resolves against the CUDA build already present
 # (Colab ships one) rather than demanding torch 2.2.1+cu118, which lives only on
-# download.pytorch.org and has no python 3.13 wheel. torchvision and torchaudio
-# were pinned here too but nothing in the package imports them, so they are gone.
-# The upper bound is where data.pyg.org stops publishing torch_scatter builds.
-"torch>=2.2.1,<2.10; sys_platform == 'linux'",
+# download.pytorch.org and has no python 3.13 wheel. Deliberately no upper bound:
+# capping it makes pip *downgrade* the host torch, which is a ~1.9 GB detour
+# through torch, cudnn and nccl wheels. torchvision and torchaudio were pinned
+# here too but nothing in the package imports them, so they are gone.
+"torch>=2.2.1; sys_platform == 'linux'",
 "torch==2.4.1; sys_platform == 'darwin'",
 "torchvision==0.19.1; sys_platform == 'darwin'",
 "torchaudio==2.4.1; sys_platform == 'darwin'",
 # These three are C++/CUDA extensions built against one exact torch version, and
-# PyPI only carries their sdists, so a bare `pip install` compiles them for many
-# minutes. Point pip at the matching prebuilt wheels instead:
-#   pip install -e . -f https://data.pyg.org/whl/torch-2.9.0+cu126.html
+# PyPI carries source only, so a bare `pip install` compiles each for 15-20
+# minutes. Point pip at the matching prebuilt wheels instead - note the full
+# local version, cu128 and all:
+#   pip install -e . -f https://data.pyg.org/whl/torch-2.11.0+cu128.html
 # substituting your own `python -c "import torch; print(torch.__version__)"`.
+# colab_setup.sh does this for you. If data.pyg.org has no directory for your
+# torch, downgrade torch to one it does rather than compiling.
 "torch_cluster",
 "torch_geometric>=2.5",
 "torch_scatter",
