@@ -54,12 +54,11 @@ dependencies = [
 "jupyterlab>=4.2.5",
 "lmdb",
 "matplotlib>=3.8",  # 3.8.4 exactly has no wheel for python 3.13
-"matscipy>=1.2.0",  # 1.1.1 caps numpy below 2 and is source-only, see numpy below
 "mattersim>=1.1",
 "monty>=2024.7.30",  # keep up-to-date together with pymatgen, atomate2
 "notebook>=7.2.2",
 "numpy>=2",  # >=1.26 is not enough: pip will happily pick 1.26.4, which is
-             # source-only on python 3.13, to satisfy an older matscipy
+             # source-only on python 3.13, to satisfy some older dependency
 "omegaconf==2.3.0",
 "pymatgen>=2024.6.4",
 "pylint",
