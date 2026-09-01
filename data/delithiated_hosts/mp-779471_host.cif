@@ -1,0 +1,46 @@
+# generated using pymatgen
+data_MnFe(BO3)2
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   5.17081659
+_cell_length_b   11.05133545
+_cell_length_c   5.24091680
+_cell_angle_alpha   103.14175918
+_cell_angle_beta   60.67927473
+_cell_angle_gamma   101.13698250
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   MnFe(BO3)2
+_chemical_formula_sum   'Mn2 Fe2 B4 O12'
+_cell_volume   253.10028442
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mn  Mn0  1  0.22409800  0.61671300  0.36324300  1.0
+  Mn  Mn1  1  0.77585300  0.38350900  0.63670500  1.0
+  Fe  Fe2  1  0.71937200  0.11651200  0.86420700  1.0
+  Fe  Fe3  1  0.28094800  0.88332100  0.13585400  1.0
+  B  B4  1  0.05570000  0.12737700  0.21026900  1.0
+  B  B5  1  0.94420300  0.87257900  0.79000000  1.0
+  B  B6  1  0.43957100  0.36637800  0.29360600  1.0
+  B  B7  1  0.56044900  0.63362600  0.70617500  1.0
+  O  O8  1  0.79655700  0.15417600  0.47535100  1.0
+  O  O9  1  0.20333700  0.84577700  0.52496200  1.0
+  O  O10  1  0.29303600  0.08690300  0.21693000  1.0
+  O  O11  1  0.70689100  0.91299000  0.78316100  1.0
+  O  O12  1  0.08255500  0.14635300  0.94691100  1.0
+  O  O13  1  0.91728200  0.85364500  0.05338200  1.0
+  O  O14  1  0.69761700  0.33743700  0.03300200  1.0
+  O  O15  1  0.30234500  0.66252200  0.96670300  1.0
+  O  O16  1  0.40256100  0.34825300  0.56254100  1.0
+  O  O17  1  0.59750200  0.65175400  0.43725100  1.0
+  O  O18  1  0.21029900  0.41123900  0.28078200  1.0
+  O  O19  1  0.78976600  0.58887000  0.71909100  1.0

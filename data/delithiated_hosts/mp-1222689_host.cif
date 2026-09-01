@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_Ti2MnNiO8
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   5.94886743
+_cell_length_b   8.37256568
+_cell_length_c   5.96235068
+_cell_angle_alpha   90.97388510
+_cell_angle_beta   89.99959789
+_cell_angle_gamma   90.00006215
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   Ti2MnNiO8
+_chemical_formula_sum   'Ti4 Mn2 Ni2 O16'
+_cell_volume   296.92559115
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ti  Ti0  1  0.74999900  0.37500500  0.00000000  1.0
+  Ti  Ti1  1  0.25000000  0.87499500  0.49999900  1.0
+  Ti  Ti2  1  0.74999900  0.87499400  0.49999900  1.0
+  Ti  Ti3  1  0.25000100  0.37500400  0.99999800  1.0
+  Mn  Mn4  1  0.50000400  0.12499700  0.74999900  1.0
+  Mn  Mn5  1  0.99999700  0.62500100  0.25000500  1.0
+  Ni  Ni6  1  0.99999600  0.62500200  0.74999900  1.0
+  Ni  Ni7  1  0.50000200  0.12500200  0.24999800  1.0
+  O  O8  1  0.00000100  0.87278600  0.71382200  1.0
+  O  O9  1  0.50000100  0.37277600  0.21381700  1.0
+  O  O10  1  0.99999900  0.37721400  0.78617900  1.0
+  O  O11  1  0.49999900  0.87722500  0.28618300  1.0
+  O  O12  1  0.00000100  0.86103500  0.27013200  1.0
+  O  O13  1  0.50000100  0.36103100  0.77012500  1.0
+  O  O14  1  0.49999900  0.88897000  0.72987700  1.0
+  O  O15  1  0.00000100  0.38896400  0.22986900  1.0
+  O  O16  1  0.77488300  0.64045000  0.48434800  1.0
+  O  O17  1  0.27491500  0.14046400  0.98436000  1.0
+  O  O18  1  0.22511000  0.64044800  0.48434900  1.0
+  O  O19  1  0.72508100  0.14046200  0.98436200  1.0
+  O  O20  1  0.72508700  0.10953600  0.51563800  1.0
+  O  O21  1  0.22511600  0.60954900  0.01565000  1.0
+  O  O22  1  0.77489100  0.60955100  0.01565400  1.0
+  O  O23  1  0.27491800  0.10953700  0.51563800  1.0

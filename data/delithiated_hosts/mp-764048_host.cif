@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_Fe2Ni3Sb3O16
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   6.05032100
+_cell_length_b   6.08042358
+_cell_length_c   9.69375987
+_cell_angle_alpha   91.46234971
+_cell_angle_beta   90.50644314
+_cell_angle_gamma   119.72147534
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   Fe2Ni3Sb3O16
+_chemical_formula_sum   'Fe2 Ni3 Sb3 O16'
+_cell_volume   309.50852961
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Fe  Fe0  1  0.68231100  0.35381900  0.50599800  1.0
+  Fe  Fe1  1  0.34819800  0.70371200  0.97361600  1.0
+  Ni  Ni2  1  0.82889700  0.65817400  0.21557500  1.0
+  Ni  Ni3  1  0.17018100  0.83265400  0.71254800  1.0
+  Ni  Ni4  1  0.66400100  0.83731100  0.71336400  1.0
+  Sb  Sb5  1  0.33632300  0.16709500  0.21604400  1.0
+  Sb  Sb6  1  0.83061700  0.16684200  0.21485900  1.0
+  Sb  Sb7  1  0.17479300  0.34538900  0.71553300  1.0
+  O  O8  1  0.33603800  0.18783000  0.59409300  1.0
+  O  O9  1  0.51496100  0.02558200  0.33603200  1.0
+  O  O10  1  0.65687300  0.31842600  0.10098200  1.0
+  O  O11  1  0.00303800  0.00416100  0.31756500  1.0
+  O  O12  1  0.01917700  0.00876700  0.80451100  1.0
+  O  O13  1  0.84802100  0.17491700  0.59675800  1.0
+  O  O14  1  0.51015600  0.47144100  0.33983200  1.0
+  O  O15  1  0.96183300  0.46884100  0.33924800  1.0
+  O  O16  1  0.15356700  0.30927700  0.10225100  1.0
+  O  O17  1  0.85669500  0.67834500  0.59947900  1.0
+  O  O18  1  0.03359400  0.50828600  0.84648500  1.0
+  O  O19  1  0.48050100  0.52157400  0.84590100  1.0
+  O  O20  1  0.31930100  0.66513800  0.60834700  1.0
+  O  O21  1  0.17009100  0.84703300  0.10043400  1.0
+  O  O22  1  0.46353800  0.96703200  0.83546100  1.0
+  O  O23  1  0.67698900  0.85045500  0.09687900  1.0

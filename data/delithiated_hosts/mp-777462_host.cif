@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_Ni3Sn3(SbO8)2
+_symmetry_space_group_name_H-M   'P 1'
+_cell_length_a   6.11949727
+_cell_length_b   6.11949727
+_cell_length_c   9.81478910
+_cell_angle_alpha   89.89256686
+_cell_angle_beta   89.89256686
+_cell_angle_gamma   60.40578082
+_symmetry_Int_Tables_number   1
+_chemical_formula_structural   Ni3Sn3(SbO8)2
+_chemical_formula_sum   'Ni3 Sn3 Sb2 O16'
+_cell_volume   319.59750774
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ni  Ni0  1  0.17076200  0.17076200  0.78539900  1.0
+  Ni  Ni1  1  0.82613700  0.34073900  0.28758600  1.0
+  Ni  Ni2  1  0.34073900  0.82613700  0.28758600  1.0
+  Sn  Sn3  1  0.66031400  0.16779300  0.78651200  1.0
+  Sn  Sn4  1  0.16779300  0.66031400  0.78651200  1.0
+  Sn  Sn5  1  0.82856200  0.82856200  0.28703000  1.0
+  Sb  Sb6  1  0.32741100  0.32741100  0.50645300  1.0
+  Sb  Sb7  1  0.65602100  0.65602100  0.02169600  1.0
+  O  O8  1  0.66227800  0.16712300  0.41156900  1.0
+  O  O9  1  0.48277100  0.48277100  0.65205600  1.0
+  O  O10  1  0.33374500  0.33374500  0.89753800  1.0
+  O  O11  1  0.00129900  0.00129900  0.69129200  1.0
+  O  O12  1  0.99937700  0.99937700  0.20193400  1.0
+  O  O13  1  0.16712300  0.66227800  0.41156900  1.0
+  O  O14  1  0.48186800  0.03958800  0.65295300  1.0
+  O  O15  1  0.03958800  0.48186800  0.65295300  1.0
+  O  O16  1  0.83097600  0.83097600  0.90501900  1.0
+  O  O17  1  0.16879300  0.16879300  0.40633600  1.0
+  O  O18  1  0.96139300  0.51897100  0.14541000  1.0
+  O  O19  1  0.51897100  0.96139300  0.14541000  1.0
+  O  O20  1  0.66657700  0.66657700  0.39188100  1.0
+  O  O21  1  0.82965400  0.33380300  0.90537000  1.0
+  O  O22  1  0.51413000  0.51413000  0.15211700  1.0
+  O  O23  1  0.33380300  0.82965400  0.90537000  1.0

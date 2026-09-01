@@ -1,0 +1,2 @@
+pair,host,lithiated,num_li,mean_voltage_V,min_step_voltage_V,max_step_voltage_V,total_volume_change_pct,worst_step_volume_change_pct,reconstructed_at_li,verdict,reasons
+1,TaNbS6,LiTaNbS6,1,2.182,2.182,2.182,-10.38,10.38,,FAIL,total volume change -10.4%; worst single step 10.4%

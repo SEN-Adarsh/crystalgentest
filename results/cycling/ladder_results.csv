@@ -1,0 +1,3 @@
+pair,num_li,pct_li_removed,formula,step_voltage_V,step_volume_change_pct,cumulative_volume_change_pct,topotactic,min_li_clearance_A,energy_eV
+1,1,0.0,LiTaNbS6,,0.0,0.0,True,2.533,-59.017
+1,0,100.0,TaNbS6,2.182,-10.38,-10.38,True,,-54.955
