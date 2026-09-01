@@ -22,6 +22,21 @@ OXIDATION_MAP.update({symbol: window[0] for symbol, window in REDOX_LIMITS.items
 
 ANIONS: Tuple[str, ...] = tuple(Element.from_Z(z).symbol for z in ANION_NUMBERS)
 
+# An anion-anion bond means the pair is oxidised: peroxide O2(2-) instead of two
+# O(2-), persulfide S2(2-) instead of two S(2-). Either way the pair carries 2
+# fewer electrons than the isolated ions, so each dimer found reduces the total
+# anion charge by 2. Cutoffs are safely above the free-molecule bond length and
+# well below the shortest non-bonded anion-anion contact in an oxide or sulfide.
+#
+# ponytail: homonuclear pairs only. Mixed dimers (O-F, S-Cl) are vanishingly rare
+# in cathode hosts; add them here if a generated structure ever needs it.
+ANION_DIMER_CUTOFF: Dict[str, float] = {
+    "O": 1.60,  # peroxide O-O is 1.49
+    "F": 1.60,  # F2 is 1.41
+    "S": 2.30,  # persulfide S-S is 2.05
+    "Cl": 2.20,  # Cl2 is 1.99
+}
+
 
 class PhysicsInformedLiPlacer:
     def __init__(
@@ -38,6 +53,39 @@ class PhysicsInformedLiPlacer:
         self.max_anion_dist = max_anion_dist
         self.target_coordination = target_coordination
 
+    def count_anion_dimers(self, structure: Structure) -> int:
+        """Number of anion-anion bonded pairs in the cell.
+
+        Each site is matched at most once, shortest bonds first, so a linear S3
+        chain counts as one dimer plus one lone anion rather than two dimers.
+        """
+        anion_ix = [i for i, s in enumerate(structure) if s.specie.symbol in ANIONS]
+
+        bonds: List[Tuple[float, int, int]] = []
+        for a_pos, i in enumerate(anion_ix):
+            symbol = structure[i].specie.symbol
+            cutoff = ANION_DIMER_CUTOFF.get(symbol)
+            if cutoff is None:
+                continue
+            for j in anion_ix[a_pos + 1 :]:
+                if structure[j].specie.symbol != symbol:
+                    continue
+                d = structure.lattice.get_distance_and_image(
+                    structure[i].frac_coords, structure[j].frac_coords
+                )[0]
+                if d < cutoff:
+                    bonds.append((d, i, j))
+
+        matched: set[int] = set()
+        dimers = 0
+        for _, i, j in sorted(bonds):
+            if i in matched or j in matched:
+                continue
+            matched.update((i, j))
+            dimers += 1
+
+        return dimers
+
     def calculate_redox_capacity(self, structure: Structure) -> int:
         """Number of Li the host can accept without leaving the accessible redox window.
 
@@ -50,7 +98,10 @@ class PhysicsInformedLiPlacer:
         additionally capped by the total electrons the metals can accept.
 
         Returns 0 for hosts with no redox-active metal: those cannot cycle Li and
-        are rejected rather than stuffed with Li that has nowhere to go.
+        are rejected rather than stuffed with Li that has nowhere to go. Also
+        returns 0 for hosts containing an element absent from the oxidation tables,
+        since guessing its charge produces a capacity that looks authoritative and
+        is not.
         """
         anion_charge = 0.0
         spectator_charge = 0.0
@@ -67,11 +118,18 @@ class PhysicsInformedLiPlacer:
                 sum_lower += lower
                 max_electrons += upper - lower
                 num_redox_metals += 1
+            elif symbol in OXIDATION_MAP:
+                spectator_charge += OXIDATION_MAP[symbol]
             else:
-                spectator_charge += OXIDATION_MAP.get(symbol, 2.0)
+                # Unknown charge: no capacity can be trusted for this host.
+                return 0
 
         if num_redox_metals == 0:
             return 0
+
+        # Anion-anion bonds have already consumed some of the charge the metals
+        # would otherwise have to balance.
+        anion_charge -= 2.0 * self.count_anion_dimers(structure)
 
         capacity = anion_charge - spectator_charge - sum_lower
         capacity = min(capacity, max_electrons)
@@ -265,8 +323,9 @@ def process_directory(input_dir: Path, output_dir: Path, coordination: Optional[
                 )
             else:
                 print(
-                    f"[REJECTED] {cif.name}: no redox-active metal, or no interstitial "
-                    "site matched the steric criteria."
+                    f"[REJECTED] {cif.name}: no redox-active metal, an element with no "
+                    "tabulated oxidation state, or no interstitial site matched the "
+                    "steric criteria."
                 )
         except Exception as e:
             print(f"[ERROR] Failed processing {cif.name}: {e}")

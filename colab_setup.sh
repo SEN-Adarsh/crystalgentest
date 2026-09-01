@@ -19,11 +19,11 @@ if ! curl -sfI "$WHEELS" > /dev/null; then
   exit 1
 fi
 
-pip install -q -e . -f "$WHEELS"
+pip install -e . -f "$WHEELS"
 
 # CHGNet drives the cycling screen and is not a project dependency. --no-deps
 # keeps it from pulling a different torch in and breaking the CUDA build.
-pip install -q --no-deps chgnet
+pip install --no-deps chgnet
 
 python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 python -c "import torch_scatter, torch_sparse, torch_cluster; print('pyg extensions ok')"

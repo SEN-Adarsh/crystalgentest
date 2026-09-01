@@ -180,6 +180,63 @@ def check_redox_capacity():
     print(f"  redox capacity: CoO2 -> {capacity} Li,  MgO -> rejected")
 
 
+def check_unknown_element_rejected():
+    """An element with no tabulated oxidation state must reject the host, not default to +2."""
+    placer = PhysicsInformedLiPlacer()
+
+    # Ta is in neither REDOX_WINDOW nor FIXED_OXIDATION. Booking it as +2 instead
+    # of its real +5 inflated the capacity of hosts like TaNbS6.
+    tas = Structure(
+        Lattice.cubic(5.0),
+        ["Ta", "Nb", "S", "S", "S", "S"],
+        [
+            [0.0, 0.0, 0.0],
+            [0.5, 0.5, 0.5],
+            [0.25, 0.25, 0.25],
+            [0.75, 0.75, 0.75],
+            [0.25, 0.75, 0.25],
+            [0.75, 0.25, 0.75],
+        ],
+    )
+    assert placer.calculate_redox_capacity(tas) == 0, "host with untabulated Ta must be rejected"
+    assert placer.place_lithium(tas) is None, "host with untabulated Ta must not be lithiated"
+    print("  host containing untabulated Ta correctly rejected")
+
+
+def check_anion_dimer_detection():
+    """A bonded anion pair carries 2 fewer electrons than two isolated anions."""
+    placer = PhysicsInformedLiPlacer()
+
+    # Two O at 1.45 A: one peroxide unit, not two oxide ions.
+    lat = Lattice.cubic(8.0)
+    peroxide = Structure(
+        lat, ["Ni", "O", "O"], [[0.0, 0.0, 0.0], [0.4, 0.5, 0.5], [0.4 + 1.45 / 8.0, 0.5, 0.5]]
+    )
+    assert placer.count_anion_dimers(peroxide) == 1, "O-O at 1.45 A must count as one dimer"
+
+    # Same cell, oxygens pulled apart: two independent oxide ions.
+    oxide = Structure(lat, ["Ni", "O", "O"], [[0.0, 0.0, 0.0], [0.3, 0.5, 0.5], [0.7, 0.5, 0.5]])
+    assert placer.count_anion_dimers(oxide) == 0, "O at 3.2 A apart must not count as a dimer"
+
+    # The dimer removes 2 from the anion charge the metals must balance, so the
+    # peroxide cell accepts fewer Li than the oxide one.
+    assert placer.calculate_redox_capacity(peroxide) < placer.calculate_redox_capacity(oxide), (
+        "peroxide must have lower capacity than the same cell with isolated oxide ions"
+    )
+
+    # A linear S3 chain is one dimer plus a lone S, never two dimers.
+    s3 = Structure(
+        lat,
+        ["V", "S", "S", "S"],
+        [[0.0, 0.0, 0.0], [0.4, 0.5, 0.5], [0.65, 0.5, 0.5], [0.9, 0.5, 0.5]],
+    )
+    assert placer.count_anion_dimers(s3) == 1, "each anion may be matched at most once"
+    print(
+        f"  dimers: peroxide=1 (capacity {placer.calculate_redox_capacity(peroxide)}), "
+        f"oxide=0 (capacity {placer.calculate_redox_capacity(oxide)}), S3 chain=1"
+    )
+
+
 def check_placement_on_real_host():
     """End-to-end Li insertion on a host from the dataset, if it is available."""
     if not os.path.exists(MANIFEST_PATH):
@@ -449,6 +506,8 @@ def main():
         ("noise fade", check_noise_fade),
         ("gradient flow", check_gradients_flow),
         ("redox capacity", check_redox_capacity),
+        ("unknown element", check_unknown_element_rejected),
+        ("anion dimers", check_anion_dimer_detection),
         ("corner vs edge sharing", check_connectivity_prefers_corner_sharing),
         ("bridge angle", check_bridge_angle_penalty),
         ("tetrahedral target", check_tetrahedral_target),
