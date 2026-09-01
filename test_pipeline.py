@@ -237,6 +237,30 @@ def check_anion_dimer_detection():
     )
 
 
+def check_overoxidized_host_rejected():
+    """A host no oxidation state can balance must be rejected, not clamped to full capacity."""
+    placer = PhysicsInformedLiPlacer()
+    lat = Lattice.cubic(9.0)
+
+    # MnO4 came out of a real sampling run. Neutrality needs Mn(8+); the window
+    # tops out at 4+. Before the feasibility guard this reported 1 Li, because
+    # capacity was clamped to the electrons Mn can accept and never checked
+    # against the charge the host actually demands.
+    mno4 = Structure(
+        lat,
+        ["Mn", "O", "O", "O", "O"],
+        [[0.0, 0.0, 0.0], [0.2, 0.0, 0.0], [0.0, 0.2, 0.0], [0.0, 0.0, 0.2], [0.8, 0.0, 0.0]],
+    )
+    assert placer.calculate_redox_capacity(mno4) == 0, "MnO4 needs Mn(8+) and must be rejected"
+    assert placer.place_lithium(mno4) is None, "MnO4 must not be lithiated"
+
+    # MnO2 is the same chemistry at a charge Mn(4+) can carry, and must survive.
+    mno2 = Structure(lat, ["Mn", "O", "O"], [[0.0, 0.0, 0.0], [0.2, 0.0, 0.0], [0.8, 0.0, 0.0]])
+    assert placer.calculate_redox_capacity(mno2) > 0, "MnO2 is balanceable and must be accepted"
+
+    print("  MnO4 (needs Mn 8+) rejected, MnO2 accepted")
+
+
 def check_placement_on_real_host():
     """End-to-end Li insertion on a host from the dataset, if it is available."""
     if not os.path.exists(MANIFEST_PATH):
@@ -508,6 +532,7 @@ def main():
         ("redox capacity", check_redox_capacity),
         ("unknown element", check_unknown_element_rejected),
         ("anion dimers", check_anion_dimer_detection),
+        ("overoxidized host", check_overoxidized_host_rejected),
         ("corner vs edge sharing", check_connectivity_prefers_corner_sharing),
         ("bridge angle", check_bridge_angle_penalty),
         ("tetrahedral target", check_tetrahedral_target),

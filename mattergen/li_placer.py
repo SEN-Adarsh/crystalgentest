@@ -101,12 +101,12 @@ class PhysicsInformedLiPlacer:
         are rejected rather than stuffed with Li that has nowhere to go. Also
         returns 0 for hosts containing an element absent from the oxidation tables,
         since guessing its charge produces a capacity that looks authoritative and
-        is not.
+        is not, and 0 for hosts that cannot be charge balanced at all (see below).
         """
         anion_charge = 0.0
         spectator_charge = 0.0
         sum_lower = 0.0
-        max_electrons = 0.0
+        sum_upper = 0.0
         num_redox_metals = 0
 
         for site in structure:
@@ -116,7 +116,7 @@ class PhysicsInformedLiPlacer:
             elif symbol in REDOX_LIMITS:
                 lower, upper = REDOX_LIMITS[symbol]
                 sum_lower += lower
-                max_electrons += upper - lower
+                sum_upper += upper
                 num_redox_metals += 1
             elif symbol in OXIDATION_MAP:
                 spectator_charge += OXIDATION_MAP[symbol]
@@ -131,8 +131,19 @@ class PhysicsInformedLiPlacer:
         # would otherwise have to balance.
         anion_charge -= 2.0 * self.count_anion_dimers(structure)
 
-        capacity = anion_charge - spectator_charge - sum_lower
-        capacity = min(capacity, max_electrons)
+        # Charge the redox metals must carry for the delithiated host to be neutral.
+        needed = anion_charge - spectator_charge
+
+        # Feasibility: if the metals cannot reach that charge even fully oxidised,
+        # the host does not exist as written. Sampled frameworks are routinely
+        # oxygen-rich this way (MnO4 wants Mn(8+), NiSnO8 wants Ni(12+)), and
+        # without this check the capacity below silently clamps to max_electrons
+        # and reports a confident number for an impossible structure.
+        if needed > sum_upper:
+            return 0
+
+        capacity = needed - sum_lower
+        capacity = min(capacity, sum_upper - sum_lower)
 
         return int(np.floor(max(capacity, 0.0)))
 
@@ -324,8 +335,9 @@ def process_directory(input_dir: Path, output_dir: Path, coordination: Optional[
             else:
                 print(
                     f"[REJECTED] {cif.name}: no redox-active metal, an element with no "
-                    "tabulated oxidation state, or no interstitial site matched the "
-                    "steric criteria."
+                    "tabulated oxidation state, a charge that no accessible oxidation "
+                    "state can balance, or no interstitial site matched the steric "
+                    "criteria."
                 )
         except Exception as e:
             print(f"[ERROR] Failed processing {cif.name}: {e}")
