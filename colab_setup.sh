@@ -1,30 +1,22 @@
 #!/usr/bin/env bash
 # Colab setup. Run once per session:  !bash colab_setup.sh
 #
-# Colab's own runtime is Python 3.13 with numpy 2.x, and `pip install -e .`
-# cannot satisfy this project there: torch 2.2.1+cu118 has no cp313 wheel,
-# torch_scatter/sparse/cluster have no cp313 wheels for it either, and pip
-# ignores the [tool.uv.sources] block where upstream pinned those wheels by URL.
-# So build a Python 3.10 venv with uv instead, which does honour that block.
-#
-# Everything afterwards runs through `uv run`, e.g.
-#   !uv run python -m mattergen.cycling_screen --pairs_dir results/pairs
-#
-# ponytail: a 3.10 venv, not a de-pinned 3.13 install. Relaxing the pins means
-# porting gemnet off torch_scatter onto native torch.scatter_reduce - real work,
-# and it changes numerics. Revisit if upstream drops the pins.
+# Installs against the torch Colab already ships, on Colab's own Python. The
+# only thing pip cannot work out by itself is torch_scatter / torch_sparse /
+# torch_cluster: PyPI carries source-only, so pip would compile them for ~20
+# minutes. data.pyg.org has prebuilt wheels, but they are keyed to one exact
+# torch version, so the find-links URL has to be derived at runtime.
 set -euo pipefail
 
-pip install -q uv
-uv venv --python 3.10
-uv sync
+TORCH=$(python -c "import torch; print(torch.__version__)")
+echo "building against torch $TORCH"
 
-# CHGNet drives the cycling screen and is not a project dependency. It declares
-# torch>=2.4.1 but runs fine on 2.2.1, so install it without letting it pull a
-# different torch in and break the CUDA build.
-uv pip install --no-deps chgnet
-uv pip install pymatgen ase typing-extensions
+pip install -q -e . -f "https://data.pyg.org/whl/torch-${TORCH}.html"
 
-uv run python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
-uv run python -c "import torch_scatter, torch_sparse, torch_cluster; print('pyg extensions ok')"
-uv run python test_pipeline.py
+# CHGNet drives the cycling screen and is not a project dependency. --no-deps
+# keeps it from pulling a different torch in and breaking the CUDA build.
+pip install -q --no-deps chgnet
+
+python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
+python -c "import torch_scatter, torch_sparse, torch_cluster; print('pyg extensions ok')"
+python test_pipeline.py

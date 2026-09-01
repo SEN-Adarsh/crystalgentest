@@ -367,7 +367,8 @@ def structures_to_numpy(
         for prop, prop_val in structure.properties.items():
             if prop in PROPERTY_SOURCE_IDS:
                 properties[prop].append(prop_val)
-    structure_infos["pos"] = np.row_stack(structure_infos["pos"])
+    # np.row_stack was removed in numpy 2.0; vstack is what it always aliased.
+    structure_infos["pos"] = np.vstack(structure_infos["pos"])
     structure_infos["cell"] = np.array(structure_infos["cell"])
     structure_infos["atomic_numbers"] = np.concatenate(structure_infos["atomic_numbers"])
     structure_infos["num_atoms"] = np.array(structure_infos["num_atoms"])

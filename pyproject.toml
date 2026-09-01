@@ -53,12 +53,13 @@ dependencies = [
 "hydra-joblib-launcher==1.1.5",
 "jupyterlab>=4.2.5",
 "lmdb",
-"matplotlib==3.8.4",
+"matplotlib>=3.8",  # 3.8.4 exactly has no wheel for python 3.13
 "matscipy>=0.7.0",
 "mattersim>=1.1",
-"monty==2024.7.30 ",  # keep up-to-date together with pymatgen, atomate2
+"monty>=2024.7.30",  # keep up-to-date together with pymatgen, atomate2
 "notebook>=7.2.2",
-"numpy<2.0",  # pin numpy before breaking changes in 2.0
+"numpy>=1.26",  # 1.26.4 was the last release before the 2.0 breaks and has no
+                # python 3.13 wheel; recent pymatgen requires numpy 2 anyway
 "omegaconf==2.3.0",
 "pymatgen>=2024.6.4",
 "pylint",
@@ -68,12 +69,20 @@ dependencies = [
 "setuptools<81",
 "SMACT",
 "sympy>=1.11.1",
-"torch==2.2.1+cu118; sys_platform == 'linux'", 
-"torchvision==0.17.1+cu118; sys_platform == 'linux'",
-"torchaudio==2.2.1+cu118; sys_platform == 'linux'",
+# Unpinned on linux so pip resolves against the CUDA build already present
+# (Colab ships one) rather than demanding torch 2.2.1+cu118, which lives only on
+# download.pytorch.org and has no python 3.13 wheel. torchvision and torchaudio
+# were pinned here too but nothing in the package imports them, so they are gone.
+# The upper bound is where data.pyg.org stops publishing torch_scatter builds.
+"torch>=2.2.1,<2.10; sys_platform == 'linux'",
 "torch==2.4.1; sys_platform == 'darwin'",
 "torchvision==0.19.1; sys_platform == 'darwin'",
 "torchaudio==2.4.1; sys_platform == 'darwin'",
+# These three are C++/CUDA extensions built against one exact torch version, and
+# PyPI only carries their sdists, so a bare `pip install` compiles them for many
+# minutes. Point pip at the matching prebuilt wheels instead:
+#   pip install -e . -f https://data.pyg.org/whl/torch-2.9.0+cu126.html
+# substituting your own `python -c "import torch; print(torch.__version__)"`.
 "torch_cluster",
 "torch_geometric>=2.5",
 "torch_scatter",
