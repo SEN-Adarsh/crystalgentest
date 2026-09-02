@@ -49,12 +49,17 @@ class PhysicsInformedLiPlacer:
         min_tm_dist: float = 2.40,
         min_anion_dist: float = 1.70,
         max_anion_dist: float = 2.70,
+        # Li needs at least a tetrahedron of anions to bond to. Voronoi finds
+        # CN 2-3 pockets in the gaps between framework polyhedra; Li placed there
+        # is coordinated by nothing and the site does not survive relaxation.
+        min_coordination: int = 4,
         target_coordination: Optional[str] = None,
     ):
         self.min_li_dist = min_li_dist
         self.min_tm_dist = min_tm_dist
         self.min_anion_dist = min_anion_dist
         self.max_anion_dist = max_anion_dist
+        self.min_coordination = min_coordination
         self.target_coordination = target_coordination
 
     def count_anion_dimers(self, structure: Structure) -> int:
@@ -253,22 +258,17 @@ class PhysicsInformedLiPlacer:
 
             if min_tm_d >= self.min_tm_dist and min_anion_d >= self.min_anion_dist:
                 cn, geom = self.classify_coordination(structure, frac)
+                if cn < self.min_coordination:
+                    continue
                 if self.target_coordination is None or geom == self.target_coordination:
                     valid_candidates.append((frac, cn, geom))
 
-        # Adaptive fallback: relax constraints slightly if strict cutoffs found no voids
-        if not valid_candidates:
-            for frac in candidates:
-                tm_dists = [
-                    structure.lattice.get_distance_and_image(frac, s.frac_coords)[0]
-                    for s in structure if s.specie.symbol not in ANIONS
-                ]
-                min_tm_d = min(tm_dists) if tm_dists else 999.0
-
-                if min_tm_d >= self.min_tm_dist - 0.30:
-                    cn, geom = self.classify_coordination(structure, frac)
-                    valid_candidates.append((frac, cn, geom))
-
+        # No fallback that relaxes the cutoffs. A host whose only open cavities are
+        # too close to a framework cation, or are 2-3 coordinate gaps between
+        # polyhedra, has no Li site -- saying so beats placing Li in a pocket that
+        # no relaxation would keep. Fe2O3F in the v4 batch is the case that killed
+        # the old fallback: every CN-4 void sits 1.75-2.03 A from an Fe, and every
+        # void clearing the cation floor is CN 3.
         if not valid_candidates:
             return None
 
@@ -336,8 +336,8 @@ def process_directory(input_dir: Path, output_dir: Path, coordination: Optional[
                 print(
                     f"[REJECTED] {cif.name}: no redox-active metal, an element with no "
                     "tabulated oxidation state, a charge that no accessible oxidation "
-                    "state can balance, or no interstitial site matched the steric "
-                    "criteria."
+                    "state can balance, or no interstitial site that is both far enough "
+                    "from the framework cations and coordinated by enough anions."
                 )
         except Exception as e:
             print(f"[ERROR] Failed processing {cif.name}: {e}")

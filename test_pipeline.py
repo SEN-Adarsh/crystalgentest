@@ -262,11 +262,15 @@ def check_overoxidized_host_rejected():
 
 
 def check_li_cation_separation():
-    """Inserted Li must sit at a cation-cation distance from the framework metals."""
+    """The steric knobs must hold physical values, and a closed host must be rejected."""
     placer = PhysicsInformedLiPlacer()
     assert placer.min_tm_dist >= 2.4, "Li-cation floor is a Li-anion number, too permissive"
+    assert placer.min_coordination >= 4, "Li needs at least a tetrahedron of anions"
 
-    host = Structure(
+    # Charge-balanceable (Mn2O4 wants 2 Li) but far too sparse for a real Li site:
+    # with only 4 O in 512 A^3 every Voronoi void is 2-3 coordinate. The placer must
+    # say so rather than relax its cutoffs until something fits.
+    sparse = Structure(
         Lattice.cubic(8.0),
         ["Mn", "Mn", "O", "O", "O", "O"],
         [
@@ -274,18 +278,10 @@ def check_li_cation_separation():
             [0.25, 0.0, 0.0], [0.0, 0.25, 0.0], [0.75, 0.0, 0.0], [0.0, 0.75, 0.0],
         ],
     )
-    lithiated = placer.place_lithium(host)
-    assert lithiated is not None, "Mn2O4 is balanceable and open, must be lithiated"
+    assert placer.calculate_redox_capacity(sparse) > 0, "Mn2O4 is charge-balanceable"
+    assert placer.place_lithium(sparse) is None, "host with only low-CN voids must be rejected"
 
-    worst = min(
-        lithiated.lattice.get_distance_and_image(site.frac_coords, other.frac_coords)[0]
-        for site in lithiated[len(host):]
-        for other in host
-        if other.specie.symbol not in ANIONS
-    )
-    assert worst >= placer.min_tm_dist - 1e-6, f"Li only {worst:.2f} A from a cation"
-
-    print(f"  {lithiated.composition.reduced_formula}: closest Li-cation {worst:.2f} A")
+    print("  cation floor 2.40 A, min CN 4, undercoordinated host rejected")
 
 
 def check_placement_on_real_host():
@@ -313,13 +309,23 @@ def check_placement_on_real_host():
         n_li = sum(1 for s in lithiated if s.specie.symbol == "Li")
         assert n_li > 0
         assert len(lithiated) == len(host) + n_li
-        # Every inserted Li must respect the steric floor against the framework.
+        # Every inserted Li must respect the steric floors and be properly coordinated.
         for site in lithiated[len(host):]:
-            nearest = min(
-                lithiated.lattice.get_distance_and_image(site.frac_coords, other.frac_coords)[0]
-                for other in host
-            )
+            dists = [
+                (lithiated.lattice.get_distance_and_image(site.frac_coords, o.frac_coords)[0], o)
+                for o in host
+            ]
+            nearest = min(d for d, _ in dists)
             assert nearest >= placer.min_anion_dist - 1e-6, f"Li too close to framework: {nearest:.2f} A"
+
+            cations = [d for d, o in dists if o.specie.symbol not in ANIONS]
+            assert min(cations) >= placer.min_tm_dist - 1e-6, f"Li only {min(cations):.2f} A from a cation"
+
+            cn = sum(
+                1 for d, o in dists
+                if o.specie.symbol in ANIONS and placer.min_anion_dist <= d <= placer.max_anion_dist
+            )
+            assert cn >= placer.min_coordination, f"Li in a CN {cn} pocket"
         print(f"  {record['host_formula']} -> {lithiated.composition.reduced_formula} ({n_li} Li)")
         return
 
