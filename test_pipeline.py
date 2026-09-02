@@ -21,7 +21,7 @@ from mattergen.diffusion.polyhedra import (
     polyhedral_guidance_grad,
 )
 from mattergen.diffusion.redox import DifferentiableRedoxLoss
-from mattergen.li_placer import PhysicsInformedLiPlacer
+from mattergen.li_placer import ANIONS, PhysicsInformedLiPlacer
 
 OctahedralGeometryLoss = PolyhedralGeometryLoss
 
@@ -259,6 +259,33 @@ def check_overoxidized_host_rejected():
     assert placer.calculate_redox_capacity(mno2) > 0, "MnO2 is balanceable and must be accepted"
 
     print("  MnO4 (needs Mn 8+) rejected, MnO2 accepted")
+
+
+def check_li_cation_separation():
+    """Inserted Li must sit at a cation-cation distance from the framework metals."""
+    placer = PhysicsInformedLiPlacer()
+    assert placer.min_tm_dist >= 2.4, "Li-cation floor is a Li-anion number, too permissive"
+
+    host = Structure(
+        Lattice.cubic(8.0),
+        ["Mn", "Mn", "O", "O", "O", "O"],
+        [
+            [0.0, 0.0, 0.0], [0.5, 0.5, 0.5],
+            [0.25, 0.0, 0.0], [0.0, 0.25, 0.0], [0.75, 0.0, 0.0], [0.0, 0.75, 0.0],
+        ],
+    )
+    lithiated = placer.place_lithium(host)
+    assert lithiated is not None, "Mn2O4 is balanceable and open, must be lithiated"
+
+    worst = min(
+        lithiated.lattice.get_distance_and_image(site.frac_coords, other.frac_coords)[0]
+        for site in lithiated[len(host):]
+        for other in host
+        if other.specie.symbol not in ANIONS
+    )
+    assert worst >= placer.min_tm_dist - 1e-6, f"Li only {worst:.2f} A from a cation"
+
+    print(f"  {lithiated.composition.reduced_formula}: closest Li-cation {worst:.2f} A")
 
 
 def check_placement_on_real_host():
@@ -533,6 +560,7 @@ def main():
         ("unknown element", check_unknown_element_rejected),
         ("anion dimers", check_anion_dimer_detection),
         ("overoxidized host", check_overoxidized_host_rejected),
+        ("Li-cation separation", check_li_cation_separation),
         ("corner vs edge sharing", check_connectivity_prefers_corner_sharing),
         ("bridge angle", check_bridge_angle_penalty),
         ("tetrahedral target", check_tetrahedral_target),

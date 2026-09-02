@@ -42,7 +42,11 @@ class PhysicsInformedLiPlacer:
     def __init__(
         self,
         min_li_dist: float = 2.30,
-        min_tm_dist: float = 1.85,
+        # Li-to-framework-cation floor. Two cations repel, so real Li-TM contacts in
+        # oxides are 2.5-2.9 A (face- to edge-sharing octahedra); 2.40 is a permissive
+        # floor below that. The old 1.85 was a Li-anion number applied to cations and
+        # let Li land 1.86-1.90 A from Ni/Co in sampled hosts.
+        min_tm_dist: float = 2.40,
         min_anion_dist: float = 1.70,
         max_anion_dist: float = 2.70,
         target_coordination: Optional[str] = None,
@@ -261,7 +265,7 @@ class PhysicsInformedLiPlacer:
                 ]
                 min_tm_d = min(tm_dists) if tm_dists else 999.0
 
-                if min_tm_d >= 1.70:
+                if min_tm_d >= self.min_tm_dist - 0.30:
                     cn, geom = self.classify_coordination(structure, frac)
                     valid_candidates.append((frac, cn, geom))
 
@@ -308,11 +312,7 @@ def process_directory(input_dir: Path, output_dir: Path, coordination: Optional[
     cif_files = sorted(list(input_dir.glob("*.cif")))
     print(f"Loaded {len(cif_files)} scaffold CIFs from: {input_dir}")
 
-    placer = PhysicsInformedLiPlacer(
-        min_li_dist=2.30,
-        min_tm_dist=1.85,
-        target_coordination=coordination
-    )
+    placer = PhysicsInformedLiPlacer(target_coordination=coordination)
 
     success_count = 0
     for cif in cif_files:
