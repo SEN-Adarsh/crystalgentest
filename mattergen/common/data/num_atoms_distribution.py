@@ -25,3 +25,15 @@ NUM_ATOMS_DISTRIBUTIONS = {
         20: 0.04345679662456145,
     }
 }
+
+# Cell-size extrapolation probes. The base checkpoint never saw a cell with more
+# than 20 atoms, but the num_atoms dependence enters the corruption process
+# analytically -- the lattice prior is centred on num_atoms/limit_density and the
+# fractional-coordinate noise is scaled by num_atoms**(-1/3) -- so the model may
+# extrapolate. These two distributions exist to measure whether it does: sample
+# both, and compare novelty and validity of LARGE against SMALL as the control.
+#
+# ponytail: flat distributions, not fitted histograms. They are a diagnostic, not
+# a sampling target. Fit a real >20 histogram from Alexandria if this ships.
+NUM_ATOMS_DISTRIBUTIONS["TEST_SMALL"] = {n: 1 / 7 for n in (8, 10, 12, 14, 16, 18, 20)}
+NUM_ATOMS_DISTRIBUTIONS["TEST_LARGE"] = {n: 1 / 6 for n in (22, 24, 26, 28, 30, 32)}
