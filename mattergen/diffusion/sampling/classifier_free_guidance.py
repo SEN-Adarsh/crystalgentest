@@ -48,7 +48,7 @@ class GuidedPredictorCorrector(PredictorCorrector):
         x: Diffusable,
         t: torch.Tensor,
     ) -> Diffusable:
-        """For each field, regardless of whether the corruption process is SDE or D3PM, we guide the score in the same way here,
+        r"""For each field, regardless of whether the corruption process is SDE or D3PM, we guide the score in the same way here,
         by taking a linear combination of the conditional and unconditional score model output.
 
         For discrete fields, the score model outputs are interpreted as logits, so the linear combination here means we compute logits for
