@@ -12,8 +12,11 @@ Usage:
 """
 
 import argparse
+import json
 import shutil
+import subprocess
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import torch
@@ -25,6 +28,31 @@ from mattergen.li_placer import PhysicsInformedLiPlacer
 
 DEFAULT_CHECKPOINT = Path("checkpoints/base_model/checkpoints/mattergen_base")
 DEFAULT_OUTPUT_DIR = Path("results/pairs")
+
+
+def _git_commit() -> str:
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+    except Exception:
+        return "unknown"
+
+
+def _write_provenance(args: argparse.Namespace, output_dir: Path) -> None:
+    """Stamp every generation run with what produced it (checkpoint, guidance
+    weight, commit). v2/v3 batches are unrecoverable without this."""
+    provenance = {
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "git_commit": _git_commit(),
+        "checkpoint": str(args.checkpoint.resolve()),
+        "guidance_weight": args.guidance_weight,
+        "batch_size": args.batch_size,
+        "num_pairs": args.num_pairs,
+        "torch": torch.__version__,
+        "cuda": torch.cuda.is_available(),
+    }
+    (output_dir / "_provenance.json").write_text(json.dumps(provenance, indent=2))
 
 
 def main() -> None:
@@ -40,6 +68,7 @@ def main() -> None:
     args = parser.parse_args()
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    _write_provenance(args, args.output_dir)
     scratch = args.output_dir / "_sampling"
 
     device = "cuda" if torch.cuda.is_available() else "cpu"

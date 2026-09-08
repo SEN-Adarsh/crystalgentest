@@ -103,6 +103,11 @@ class PredictorCorrector(Generic[Diffusable]):
         self._polyhedral_geometry_loss = PolyhedralGeometryLoss()
         self._polyhedral_connectivity_loss = PolyhedralConnectivityLoss()
 
+        # Sampling-time guidance diagnostics: one entry per _steer call, summarized
+        # at the end of each _denoise run. ponytail: in-memory only; persist
+        # `steer_trace` from the caller if a paper figure needs per-step data.
+        self.steer_trace: list[dict] = []
+
     @property
     def diffusion_module(self) -> DiffusionModule:
         return self._diffusion_module
@@ -152,9 +157,42 @@ class PredictorCorrector(Generic[Diffusable]):
             connectivity_weight=self._polyhedral_connectivity_weight,
         )
         if grad is None:
+            self.steer_trace.append({"t": t[0].item(), "active": False})
             return score
 
+        grad_norm = grad.norm().item()
+        score_norm = score.pos.norm().item()
+        self.steer_trace.append(
+            {
+                "t": t[0].item(),
+                "active": True,
+                "grad_norm": grad_norm,
+                "score_norm": score_norm,
+                "rel": (self._polyhedral_guidance_weight * grad_norm) / max(score_norm, 1e-12),
+            }
+        )
         return score.replace(pos=score.pos - self._polyhedral_guidance_weight * grad)
+
+    def _log_steer_summary(self) -> None:
+        """Print guidance diagnostics accumulated during the last _denoise run."""
+        if self._polyhedral_guidance_weight == 0.0 or not self.steer_trace:
+            return
+        entries = self.steer_trace
+        active = [e for e in entries if e["active"]]
+        n = len(entries)
+        print(
+            f"[_steer] calls={n} active={len(active)} "
+            f"({100.0 * len(active) / max(n, 1):.1f}%) no-op={n - len(active)}"
+        )
+        if active:
+            rel = sorted(e["rel"] for e in active)
+            grads = sorted(e["grad_norm"] for e in active)
+            ts = [e["t"] for e in active]
+            print(
+                f"[_steer] |w*grad|/|score| median={rel[len(rel) // 2]:.3g} max={rel[-1]:.3g} | "
+                f"|grad| median={grads[len(grads) // 2]:.3g} max={grads[-1]:.3g} | "
+                f"active t range=[{min(ts):.3f}, {max(ts):.3f}]"
+            )
 
     @classmethod
     def from_pl_module(cls, pl_module: DiffusionLightningModule, **kwargs) -> PredictorCorrector:
@@ -235,6 +273,7 @@ class PredictorCorrector(Generic[Diffusable]):
         for k in self._correctors:
             mask.setdefault(k, None)
         mean_batch = batch.clone()
+        self.steer_trace = []
 
         # Decreasing timesteps from T to eps_t
         timesteps = torch.linspace(self._max_t, self._eps_t, self.N, device=self._device)
@@ -282,6 +321,7 @@ class PredictorCorrector(Generic[Diffusable]):
                 samples_means=samples_means, batch=batch, mean_batch=mean_batch, mask=mask
             )
 
+        self._log_steer_summary()
         return batch, mean_batch, recorded_samples
 
 
