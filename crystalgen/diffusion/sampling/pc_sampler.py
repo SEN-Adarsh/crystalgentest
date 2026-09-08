@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Generic, Mapping, Tuple, TypeVar
 
 import torch
@@ -44,6 +46,9 @@ class PredictorCorrector(Generic[Diffusable]):
         polyhedral_guidance_weight: float = 0.0,
         polyhedral_geometry_weight: float = 1.0,
         polyhedral_connectivity_weight: float = 1.0,
+        polyhedral_annealing: bool = True,
+        max_guidance_rel: float | None = None,
+        steer_trace_path: str | None = None,
     ):
         """
         Args:
@@ -62,6 +67,13 @@ class PredictorCorrector(Generic[Diffusable]):
                 within the guidance.
             polyhedral_connectivity_weight: relative weight of the corner-sharing term
                 within the guidance.
+            polyhedral_annealing: fade the guidance out as (1 - t) at high noise.
+                Off = full-strength guidance at every step (Run 3 ablation arm).
+            max_guidance_rel: if set, clamp |w * grad| to at most this multiple of
+                |score|. Live diagnostics show rare spikes of 90-1000x |score| at
+                individual steps; None reproduces the original unclamped behaviour.
+            steer_trace_path: if set, write the per-step guidance diagnostics to
+                this JSON file at the end of each denoising run.
         """
         self._diffusion_module = diffusion_module
         self.N = N
@@ -100,6 +112,9 @@ class PredictorCorrector(Generic[Diffusable]):
         self._polyhedral_guidance_weight = polyhedral_guidance_weight
         self._polyhedral_geometry_weight = polyhedral_geometry_weight
         self._polyhedral_connectivity_weight = polyhedral_connectivity_weight
+        self._polyhedral_annealing = polyhedral_annealing
+        self._max_guidance_rel = max_guidance_rel
+        self._steer_trace_path = steer_trace_path
         self._polyhedral_geometry_loss = PolyhedralGeometryLoss()
         self._polyhedral_connectivity_loss = PolyhedralConnectivityLoss()
 
@@ -141,7 +156,10 @@ class PredictorCorrector(Generic[Diffusable]):
         # Guidance is evaluated on the current noisy coordinates, so fade it in as
         # the geometry becomes meaningful. At t near 1 the structure is still
         # essentially random and its polyhedra carry no signal.
-        node_weight = (1.0 - t).clamp(min=0.0, max=1.0)[batch_idx]
+        if self._polyhedral_annealing:
+            node_weight = (1.0 - t).clamp(min=0.0, max=1.0)[batch_idx]
+        else:
+            node_weight = torch.ones_like(t)[batch_idx]
 
         grad = polyhedral_guidance_grad(
             frac_coords=batch.pos,
@@ -162,24 +180,37 @@ class PredictorCorrector(Generic[Diffusable]):
 
         grad_norm = grad.norm().item()
         score_norm = score.pos.norm().item()
+        scaled_norm = self._polyhedral_guidance_weight * grad_norm
+        clamped = False
+        if (
+            self._max_guidance_rel is not None
+            and scaled_norm > self._max_guidance_rel * score_norm
+            and scaled_norm > 0.0
+        ):
+            grad = grad * (self._max_guidance_rel * score_norm / scaled_norm)
+            scaled_norm = self._max_guidance_rel * score_norm
+            clamped = True
         self.steer_trace.append(
             {
                 "t": t[0].item(),
                 "active": True,
                 "grad_norm": grad_norm,
                 "score_norm": score_norm,
-                "rel": (self._polyhedral_guidance_weight * grad_norm) / max(score_norm, 1e-12),
+                "rel": scaled_norm / max(score_norm, 1e-12),
+                "clamped": clamped,
             }
         )
         return score.replace(pos=score.pos - self._polyhedral_guidance_weight * grad)
 
     def _log_steer_summary(self) -> None:
-        """Print guidance diagnostics accumulated during the last _denoise run."""
+        """Print guidance diagnostics accumulated during the last _denoise run,
+        and persist the full per-step trace if a path was configured."""
         if self._polyhedral_guidance_weight == 0.0 or not self.steer_trace:
             return
         entries = self.steer_trace
         active = [e for e in entries if e["active"]]
         n = len(entries)
+        clamped = sum(1 for e in active if e.get("clamped"))
         print(
             f"[_steer] calls={n} active={len(active)} "
             f"({100.0 * len(active) / max(n, 1):.1f}%) no-op={n - len(active)}"
@@ -193,6 +224,20 @@ class PredictorCorrector(Generic[Diffusable]):
                 f"|grad| median={grads[len(grads) // 2]:.3g} max={grads[-1]:.3g} | "
                 f"active t range=[{min(ts):.3f}, {max(ts):.3f}]"
             )
+            if clamped:
+                print(f"[_steer] clamped steps: {clamped}/{len(active)}")
+        if self._steer_trace_path is not None:
+            out = Path(self._steer_trace_path)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            # A multi-batch generate() call runs _denoise once per batch; number
+            # the trace files so batches do not overwrite each other.
+            idx = 0
+            numbered = out.with_name(f"{out.stem}_{idx:03d}{out.suffix}")
+            while numbered.exists():
+                idx += 1
+                numbered = out.with_name(f"{out.stem}_{idx:03d}{out.suffix}")
+            numbered.write_text(json.dumps(entries))
+            print(f"[_steer] trace written to {numbered}")
 
     @classmethod
     def from_pl_module(cls, pl_module: DiffusionLightningModule, **kwargs) -> PredictorCorrector:

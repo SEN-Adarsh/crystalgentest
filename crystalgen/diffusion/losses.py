@@ -50,12 +50,14 @@ class SummedFieldLoss(Loss[T]):
         redox_weight: float = 0.01,
         poly_weight: float = 0.05,
         connectivity_weight: float = 0.05,
+        physics_annealing: bool = True,
     ) -> None:
         self.model_targets = model_targets
         self.loss_fns = loss_fns
         self.redox_weight = redox_weight
         self.poly_weight = poly_weight
         self.connectivity_weight = connectivity_weight
+        self.physics_annealing = physics_annealing
 
         # Domain-specific physics losses, evaluated on the denoiser's own
         # prediction of the clean structure (see _physics_losses).
@@ -182,7 +184,11 @@ class SummedFieldLoss(Loss[T]):
         # Fade the guidance out at high noise. At t near 1 the denoised geometry is
         # still essentially random, so bond-valence sums and coordination angles
         # carry no signal and would otherwise swamp the score-matching loss.
-        node_weight = (1.0 - t).clamp(min=0.0, max=1.0)[batch_idx]
+        # physics_annealing=False keeps full weight at every t (Run 3 ablation).
+        if self.physics_annealing:
+            node_weight = (1.0 - t).clamp(min=0.0, max=1.0)[batch_idx]
+        else:
+            node_weight = torch.ones_like(t)[batch_idx]
 
         # ponytail: the lattice is diffused too, but reconstructing it from the
         # LatticeVPSDE marginal needs the mean coefficient. Both auxiliary losses
@@ -227,6 +233,7 @@ class DenoisingScoreMatchingLoss(SummedFieldLoss):
         redox_weight: float = 0.01,
         poly_weight: float = 0.05,
         connectivity_weight: float = 0.05,
+        physics_annealing: bool = True,
     ):
         if field_center_zero is not None:
             assert set(field_center_zero.keys()) == set(model_targets.keys())
@@ -245,4 +252,5 @@ class DenoisingScoreMatchingLoss(SummedFieldLoss):
             redox_weight=redox_weight,
             poly_weight=poly_weight,
             connectivity_weight=connectivity_weight,
+            physics_annealing=physics_annealing,
         )

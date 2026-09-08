@@ -154,3 +154,79 @@ def motif_histogram(structures: List[Structure], **kwargs) -> Dict[str, float]:
             sum(angles[name]) / len(angles[name]) if angles[name] else None
         )
     return out
+
+
+def motif_records(
+    structures: List[Structure],
+    names: Optional[List[str]] = None,
+    **kwargs,
+) -> List[Dict]:
+    """Per-structure motif records for run analysis (Run-0 protocol v2).
+
+    One record per structure with absolute pair counts (not just fractions),
+    so that 'edge converted to corner' can be distinguished from 'edge pair
+    eliminated entirely', plus the scored flag and neighbours-per-structure
+    needed to quantify the guidance scored-asymmetry. Serializable to JSON.
+
+    Args:
+        structures: pymatgen Structures (one batch/arm).
+        names: optional identifiers (e.g. CIF filenames); defaults to indices.
+        **kwargs: forwarded to count_sharing_motifs.
+
+    Returns:
+        List of dicts, one per structure.
+    """
+    if names is None:
+        names = [str(i) for i in range(len(structures))]
+    records: List[Dict] = []
+    for name, s in zip(names, structures):
+        stats = count_sharing_motifs(s, **kwargs)
+        rec = {
+            "name": name,
+            "formula": s.composition.reduced_formula,
+            "nsites": len(s),
+            "scored": stats["total_neighbours"] > 0,
+            "corner_pairs": stats["corner_pairs"],
+            "edge_pairs": stats["edge_pairs"],
+            "face_pairs": stats["face_pairs"],
+            "corner_frac": stats["corner_frac"],
+            "edge_frac": stats["edge_frac"],
+            "face_frac": stats["face_frac"],
+            "total_neighbours": stats["total_neighbours"],
+            "mean_cation_cn": stats["mean_cation_cn"],
+            "num_cation_atoms": stats["num_cation_atoms"],
+            "bridge_angle_deg": stats["bridge_angle_deg"],
+        }
+        records.append(rec)
+    return records
+
+
+def summarize_records(records: List[Dict]) -> Dict:
+    """Aggregate motif_records into arm-level statistics, reporting absolute
+    counts and the scored fraction alongside the motif fractions."""
+    n = len(records)
+    scored = [r for r in records if r["scored"]]
+    totals = {k: sum(r[k] for r in scored) for k in ("corner_pairs", "edge_pairs", "face_pairs")}
+    total_pairs = sum(totals.values())
+    out = {
+        "n_structures": n,
+        "n_scored": len(scored),
+        "scored_frac": len(scored) / n if n else 0.0,
+        "corner_pairs": totals["corner_pairs"],
+        "edge_pairs": totals["edge_pairs"],
+        "face_pairs": totals["face_pairs"],
+        "total_neighbours": total_pairs,
+        "corner_frac": totals["corner_pairs"] / total_pairs if total_pairs else 0.0,
+        "edge_frac": totals["edge_pairs"] / total_pairs if total_pairs else 0.0,
+        "face_frac": totals["face_pairs"] / total_pairs if total_pairs else 0.0,
+        "neighbours_per_structure": total_pairs / len(scored) if scored else 0.0,
+        "mean_cation_cn": (
+            sum(r["mean_cation_cn"] for r in scored) / len(scored) if scored else 0.0
+        ),
+    }
+    for mode in ("corner", "edge", "face"):
+        angles = [
+            r["bridge_angle_deg"][mode] for r in scored if r["bridge_angle_deg"][mode] is not None
+        ]
+        out[f"{mode}_bridge_angle_mean"] = sum(angles) / len(angles) if angles else None
+    return out

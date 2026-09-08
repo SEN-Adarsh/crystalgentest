@@ -54,6 +54,7 @@ dependencies = [
 "pytorch-lightning==2.0.6",
 "requests",
 "scipy",
+"SMACT",
 # Unpinned on linux so pip resolves against the CUDA build already present
 # (Colab ships one) rather than demanding a specific torch from
 # download.pytorch.org. Deliberately no upper bound: capping it makes pip

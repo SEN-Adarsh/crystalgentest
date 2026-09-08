@@ -9,6 +9,14 @@ sampler_partial:
   # corner-sharing polyhedral networks during reverse diffusion. 0 disables it
   # and reproduces stock CrystalGen sampling exactly.
   polyhedral_guidance_weight: 0.0
+  polyhedral_geometry_weight: 1.0
+  polyhedral_connectivity_weight: 1.0
+  # Run 3 ablation: false = full-strength guidance at every step (no (1-t) fade).
+  polyhedral_annealing: true
+  # Optional safety clamp: cap |w*grad| at this multiple of |score| (null = off).
+  max_guidance_rel: null
+  # If set, per-step guidance diagnostics are written here (numbered per batch).
+  steer_trace_path: null
   remove_conditioning_fn:
     _target_: crystalgen.property_embeddings.SetUnconditionalEmbeddingType
   keep_conditioning_fn:

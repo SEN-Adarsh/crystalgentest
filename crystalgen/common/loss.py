@@ -22,6 +22,7 @@ class MaterialsLoss(SummedFieldLoss):
         redox_weight: float = 0.01,
         poly_weight: float = 0.05,
         connectivity_weight: float = 0.05,
+        physics_annealing: bool = True,
     ):
         model_targets = {"pos": ModelTarget.score_times_std, "cell": ModelTarget.score_times_std}
         self.fields_to_score = []
@@ -59,4 +60,5 @@ class MaterialsLoss(SummedFieldLoss):
             redox_weight=redox_weight,
             poly_weight=poly_weight,
             connectivity_weight=connectivity_weight,
+            physics_annealing=physics_annealing,
         )
