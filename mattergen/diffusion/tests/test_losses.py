@@ -146,10 +146,10 @@ def test_weighted_summed_field_loss(
         + unweighted_loss_per_field["bar"] * weights["bar"],
     )
     torch.testing.assert_allclose(
-        torch.stack([unweighted_loss_per_field[k] for k in unweighted_loss_per_field.keys()]),
-        torch.stack([weighted_loss_per_field[k] for k in weighted_loss_per_field.keys()]),
+        torch.tensor([unweighted_loss_per_field[k] for k in unweighted_loss_per_field.keys()]),
+        torch.tensor([weighted_loss_per_field[k] for k in weighted_loss_per_field.keys()]),
     )
-    torch.testing.assert_allclose(sum(weighted_loss_per_field.values()), unweighted_loss)
+    torch.testing.assert_allclose(sum(weighted_loss_per_field.values()), unweighted_loss.item())
 
 
 def test_wrapped_normal_loss(tiny_state_batch):
@@ -201,5 +201,7 @@ def test_wrapped_normal_loss(tiny_state_batch):
     )
     torch.testing.assert_allclose(
         torch.stack([wrapped_loss[k] for k in wrapped_loss.keys()]),
-        torch.stack([non_wrapped_loss_per_field[k] for k in non_wrapped_loss_per_field.keys()]),
+        torch.tensor(
+            [non_wrapped_loss_per_field[k] for k in non_wrapped_loss_per_field.keys()]
+        ),
     )

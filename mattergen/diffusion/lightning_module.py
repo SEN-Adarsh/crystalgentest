@@ -77,7 +77,7 @@ class DiffusionLightningModule(pl.LightningModule, Generic[T]):
     ) -> DiffusionLightningModule:
         """Load model from checkpoint. kwargs are passed to hydra's instantiate and can override
         arguments from the checkpoint config."""
-        checkpoint = torch.load(checkpoint_path, map_location=map_location)
+        checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=True)
 
         # The config should have been saved in the checkpoint by AddConfigCallback in run.py
         config = Config(**checkpoint["config"])
@@ -106,7 +106,7 @@ class DiffusionLightningModule(pl.LightningModule, Generic[T]):
         """Load model from checkpoint, but instead of using the config stored in the checkpoint,
         use the config passed in as an argument. This is useful when, e.g., an unused argument was
         removed in the code but is still present in the checkpoint config."""
-        checkpoint = torch.load(checkpoint_path, map_location=map_location)
+        checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=True)
 
         lightning_module = instantiate(config)
         assert isinstance(lightning_module, cls)

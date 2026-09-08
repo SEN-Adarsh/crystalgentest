@@ -90,7 +90,7 @@ def init_adapter_lightningmodule_from_pretrained(
 
     lightning_module = hydra.utils.instantiate(lightning_module_cfg)
 
-    ckpt: dict = torch.load(ckpt_path, map_location=get_device())
+    ckpt: dict = torch.load(ckpt_path, map_location=get_device(), weights_only=True)
     pretrained_dict: OrderedDict = ckpt["state_dict"]
     scratch_dict: OrderedDict = lightning_module.state_dict()
     scratch_dict.update(
