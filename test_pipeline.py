@@ -14,14 +14,14 @@ import os
 import torch
 from pymatgen.core import Lattice, Structure
 
-from mattergen.diffusion.physics import build_physics_graph
-from mattergen.diffusion.polyhedra import (
+from crystalgen.diffusion.physics import build_physics_graph
+from crystalgen.diffusion.polyhedra import (
     PolyhedralConnectivityLoss,
     PolyhedralGeometryLoss,
     polyhedral_guidance_grad,
 )
-from mattergen.diffusion.redox import DifferentiableRedoxLoss
-from mattergen.li_placer import ANIONS, PhysicsInformedLiPlacer
+from crystalgen.diffusion.redox import DifferentiableRedoxLoss
+from crystalgen.li_placer import ANIONS, PhysicsInformedLiPlacer
 
 OctahedralGeometryLoss = PolyhedralGeometryLoss
 
@@ -334,7 +334,7 @@ def check_placement_on_real_host():
 
 def check_cycling_math():
     """Voltage sign/scale and volume change must come out right on known numbers."""
-    from mattergen.cycling_screen import average_voltage, min_li_clearance, volume_change_pct
+    from crystalgen.cycling_screen import average_voltage, min_li_clearance, volume_change_pct
 
     # Host at -10 eV, one Li metal atom at -1.9 eV; lithiating releases 3.5 eV.
     voltage = average_voltage(
@@ -361,7 +361,7 @@ def check_cycling_math():
 
 def check_delithiation_ladder():
     """Every partial state must appear, in order, with the framework untouched."""
-    from mattergen.cycling_screen import delithiation_ladder, framework_only, li_removal_order
+    from crystalgen.cycling_screen import delithiation_ladder, framework_only, li_removal_order
 
     # Mn framework plus 3 Li, two of them deliberately crowded together.
     lithiated = Structure(

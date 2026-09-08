@@ -2,7 +2,7 @@ auto_resume: true
 checkpoint_path: null
 data_module:
   _recursive_: true
-  _target_: mattergen.common.data.datamodule.CrystDataModule
+  _target_: crystalgen.common.data.datamodule.CrystDataModule
   average_density: 0.05771451654022283
   batch_size:
     train: 32
@@ -21,7 +21,7 @@ data_module:
   - energy_above_hull
   root_dir: datasets/cache/alex_mp_20/
   train_dataset:
-    _target_: mattergen.common.data.dataset.CrystalDataset.from_cache_path
+    _target_: crystalgen.common.data.dataset.CrystalDataset.from_cache_path
     cache_path: datasets/cache/alex_mp_20/train
     properties:
     - dft_bulk_modulus
@@ -33,16 +33,16 @@ data_module:
     - energy_above_hull
     transforms:
     - _partial_: true
-      _target_: mattergen.common.data.transform.symmetrize_lattice
+      _target_: crystalgen.common.data.transform.symmetrize_lattice
     - _partial_: true
-      _target_: mattergen.common.data.transform.set_chemical_system_string
+      _target_: crystalgen.common.data.transform.set_chemical_system_string
   transforms:
   - _partial_: true
-    _target_: mattergen.common.data.transform.symmetrize_lattice
+    _target_: crystalgen.common.data.transform.symmetrize_lattice
   - _partial_: true
-    _target_: mattergen.common.data.transform.set_chemical_system_string
+    _target_: crystalgen.common.data.transform.set_chemical_system_string
   val_dataset:
-    _target_: mattergen.common.data.dataset.CrystalDataset.from_cache_path
+    _target_: crystalgen.common.data.dataset.CrystalDataset.from_cache_path
     cache_path: datasets/cache/alex_mp_20/val
     properties:
     - dft_bulk_modulus
@@ -54,41 +54,41 @@ data_module:
     - energy_above_hull
     transforms:
     - _partial_: true
-      _target_: mattergen.common.data.transform.symmetrize_lattice
+      _target_: crystalgen.common.data.transform.symmetrize_lattice
     - _partial_: true
-      _target_: mattergen.common.data.transform.set_chemical_system_string
+      _target_: crystalgen.common.data.transform.set_chemical_system_string
 lightning_module:
-  _target_: mattergen.diffusion.lightning_module.DiffusionLightningModule
+  _target_: crystalgen.diffusion.lightning_module.DiffusionLightningModule
   diffusion_module:
-    _target_: mattergen.diffusion.diffusion_module.DiffusionModule
+    _target_: crystalgen.diffusion.diffusion_module.DiffusionModule
     corruption:
-      _target_: mattergen.diffusion.corruption.multi_corruption.MultiCorruption
+      _target_: crystalgen.diffusion.corruption.multi_corruption.MultiCorruption
       discrete_corruptions:
         atomic_numbers:
-          _target_: mattergen.diffusion.corruption.d3pm_corruption.D3PMCorruption
+          _target_: crystalgen.diffusion.corruption.d3pm_corruption.D3PMCorruption
           d3pm:
-            _target_: mattergen.diffusion.d3pm.d3pm.MaskDiffusion
+            _target_: crystalgen.diffusion.d3pm.d3pm.MaskDiffusion
             dim: 101
             schedule:
-              _target_: mattergen.diffusion.d3pm.d3pm.create_discrete_diffusion_schedule
+              _target_: crystalgen.diffusion.d3pm.d3pm.create_discrete_diffusion_schedule
               kind: standard
               num_steps: 1000
           offset: 1
       sdes:
         cell:
-          _target_: mattergen.common.diffusion.corruption.LatticeVPSDE.from_vpsde_config
+          _target_: crystalgen.common.diffusion.corruption.LatticeVPSDE.from_vpsde_config
           vpsde_config:
             beta_max: 20
             beta_min: 0.1
             limit_density: 0.05771451654022283
             limit_var_scaling_constant: 0.25
         pos:
-          _target_: mattergen.common.diffusion.corruption.NumAtomsVarianceAdjustedWrappedVESDE
+          _target_: crystalgen.common.diffusion.corruption.NumAtomsVarianceAdjustedWrappedVESDE
           limit_info_key: num_atoms
           sigma_max: 5.0
           wrapping_boundary: 1.0
     loss_fn:
-      _target_: mattergen.common.loss.MaterialsLoss
+      _target_: crystalgen.common.loss.MaterialsLoss
       d3pm_hybrid_lambda: 0.01
       include_atomic_numbers: true
       include_cell: true
@@ -99,13 +99,13 @@ lightning_module:
         cell: 1.0
         pos: 0.1
     model:
-      _target_: mattergen.denoiser.GemNetTDenoiser
+      _target_: crystalgen.denoiser.GemNetTDenoiser
       atom_type_diffusion: mask
       denoise_atom_types: true
       gemnet:
-        _target_: mattergen.common.gemnet.gemnet.GemNetT
+        _target_: crystalgen.common.gemnet.gemnet.GemNetT
         atom_embedding:
-          _target_: mattergen.common.gemnet.layers.embedding_block.AtomEmbedding
+          _target_: crystalgen.common.gemnet.layers.embedding_block.AtomEmbedding
           emb_size: 512
           with_mask_type: true
         cutoff: 7.0
@@ -118,12 +118,12 @@ lightning_module:
         num_targets: 1
         otf_graph: true
         regress_stress: true
-        scale_file: /scratch/amlt_code/mattergen/common/gemnet/gemnet-dT.json
+        scale_file: /scratch/amlt_code/crystalgen/common/gemnet/gemnet-dT.json
       hidden_dim: 512
       property_embeddings: {}
       property_embeddings_adapt: {}
     pre_corruption_fn:
-      _target_: mattergen.property_embeddings.SetEmbeddingType
+      _target_: crystalgen.property_embeddings.SetEmbeddingType
       dropout_fields_iid: false
       p_unconditional: 0.2
   optimizer_partial:
@@ -163,7 +163,7 @@ trainer:
     verbose: false
   - _target_: pytorch_lightning.callbacks.TQDMProgressBar
     refresh_rate: 50
-  - _target_: mattergen.common.data.callback.SetPropertyScalers
+  - _target_: crystalgen.common.data.callback.SetPropertyScalers
   check_val_every_n_epoch: 5
   devices: 8
   gradient_clip_algorithm: value

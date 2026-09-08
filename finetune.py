@@ -1,9 +1,9 @@
-"""Fine-tune the pretrained MatterGen diffusion model on delithiated cathode hosts.
+"""Fine-tune the pretrained CrystalGen diffusion model on delithiated cathode hosts.
 
 Stage 1 of the hierarchical pipeline: the model learns the distribution of
 delithiated host frameworks. The physics-informed auxiliary losses (redox window
 and octahedral geometry) are applied automatically during training - see
-mattergen.diffusion.losses.SummedFieldLoss.
+crystalgen.diffusion.losses.SummedFieldLoss.
 
 Usage:
     python finetune.py --max_epochs 20
@@ -19,9 +19,9 @@ import torch
 from pymatgen.core import Structure
 from torch.utils.data import DataLoader, Dataset
 
-from mattergen.common.data.chemgraph import ChemGraph
-from mattergen.common.data.collate import collate
-from mattergen.common.utils.eval_utils import MatterGenCheckpointInfo, load_model_diffusion
+from crystalgen.common.data.chemgraph import ChemGraph
+from crystalgen.common.data.collate import collate
+from crystalgen.common.utils.eval_utils import CrystalGenCheckpointInfo, load_model_diffusion
 
 DEFAULT_MANIFEST = Path("data/delithiated_manifest.json")
 DEFAULT_HOSTS_DIR = Path("data/delithiated_hosts")
@@ -102,9 +102,9 @@ def main() -> None:
     )
 
     print("\n--- Loading Pretrained Diffusion Model ---")
-    # MatterGenCheckpointInfo needs the directory holding config.yaml and the
+    # CrystalGenCheckpointInfo needs the directory holding config.yaml and the
     # checkpoints/ subfolder, as an absolute path.
-    checkpoint_info = MatterGenCheckpointInfo(args.base_checkpoint.resolve())
+    checkpoint_info = CrystalGenCheckpointInfo(args.base_checkpoint.resolve())
     model = load_model_diffusion(checkpoint_info)
 
     loss_fn = model.diffusion_module.loss_fn

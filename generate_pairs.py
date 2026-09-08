@@ -22,9 +22,9 @@ from pathlib import Path
 import torch
 from pymatgen.core import Structure
 
-from mattergen.common.utils.eval_utils import MatterGenCheckpointInfo
-from mattergen.generator import CrystalGenerator
-from mattergen.li_placer import PhysicsInformedLiPlacer
+from crystalgen.common.utils.eval_utils import CrystalGenCheckpointInfo
+from crystalgen.generator import CrystalGenerator
+from crystalgen.li_placer import PhysicsInformedLiPlacer
 
 DEFAULT_CHECKPOINT = Path("checkpoints/base_model/checkpoints/mattergen_base")
 DEFAULT_OUTPUT_DIR = Path("results/pairs")
@@ -77,7 +77,7 @@ def main() -> None:
         print(f"  {torch.cuda.get_device_name(0)}", flush=True)
 
     generator = CrystalGenerator(
-        checkpoint_info=MatterGenCheckpointInfo(args.checkpoint.resolve()),
+        checkpoint_info=CrystalGenCheckpointInfo(args.checkpoint.resolve()),
         batch_size=args.batch_size,
         num_batches=1,
         record_trajectories=False,
@@ -91,7 +91,7 @@ def main() -> None:
     pairs: list[tuple[Structure, Structure]] = []
     for round_idx in range(args.max_rounds):
         round_started = time.perf_counter()
-        # MatterGen writes its own extxyz dump into this directory and does not
+        # CrystalGen writes its own extxyz dump into this directory and does not
         # create it itself.
         scratch.mkdir(parents=True, exist_ok=True)
         hosts = generator.generate(output_dir=str(scratch), hierarchical_lithiation=False)

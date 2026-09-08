@@ -404,9 +404,12 @@ FodyWeavers.xsd
 # Base weights come from HuggingFace; fine-tuned ones live in Drive / locally.
 *.ckpt
 checkpoints/**/*.pt
-# Keep the config.yaml beside each checkpoint - MatterGenCheckpointInfo needs it
+# Keep the config.yaml beside each checkpoint - CrystalGenCheckpointInfo needs it
 # and it is a few KB.
 !checkpoints/**/config.yaml
+
+# Build metadata from editable installs
+*.egg-info/
 
 # Screening scratch
 results/_*/
