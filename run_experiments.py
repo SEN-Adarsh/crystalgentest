@@ -136,7 +136,18 @@ def run_arm(
 
     # Same seed for every arm -> identical atom-count conditioning and noise
     # draws; arms differ only through the guidance term (paired design).
+    # Both RNG streams must be reset: the condition loader draws atom counts
+    # from numpy's global RNG (dataset.py: np.random.choice), while the
+    # sampler draws noise from torch's. Resetting only torch leaves the arms
+    # with different conditioning (caught by the parity suite).
+    import random
+
+    import numpy as np
+
+    random.seed(arm.seed)
+    np.random.seed(arm.seed)
     torch.manual_seed(arm.seed)
+    torch.cuda.manual_seed_all(arm.seed)
 
     n_batches = (n + batch_size - 1) // batch_size
     generator.sampling_config_overrides = _overrides(
