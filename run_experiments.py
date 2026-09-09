@@ -148,6 +148,13 @@ def run_arm(
     np.random.seed(arm.seed)
     torch.manual_seed(arm.seed)
     torch.cuda.manual_seed_all(arm.seed)
+    if arm.name.startswith("parity"):
+        # Bit-parity needs deterministic kernels on top of seeded RNGs:
+        # atomics in index_add/scatter otherwise differ by ulps between runs
+        # and the 1000-step trajectory amplifies them. Requires
+        # CUBLAS_WORKSPACE_CONFIG=:4096:8 in the environment (set it before
+        # torch is imported, i.e. in the shell that launches the driver).
+        torch.use_deterministic_algorithms(True, warn_only=True)
 
     n_batches = (n + batch_size - 1) // batch_size
     generator.sampling_config_overrides = _overrides(
